@@ -1,11 +1,24 @@
-import { WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 
 const ws = new WebSocketServer({ port: 8080 });
 
-let userCount = 0;
+const allSockets: WebSocket[] = [];
 
 ws.on("connection", (socket) => {
-  userCount += 1;
-  console.log(`User ${userCount} connected`);
+  allSockets.push(socket);
+  console.log(`User connected #`);
   socket.send("successfully connected");
+
+  socket.on("message", (message) => {
+    console.log("message received : ", message.toString());
+    allSockets.map((s) => {
+      if (socket !== s) {
+        s.send(message.toString());
+      }
+    });
+  });
+
+  socket.on("close", () => {
+    allSockets.filter((s) => s !== socket);
+  });
 });
