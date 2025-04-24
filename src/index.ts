@@ -36,4 +36,15 @@ ws.on("connection", (socket) => {
       }
     }
   });
+  socket.on("close", () => {
+    for (const [roomId, sockets] of allSockets.entries()) {
+      const index = sockets.indexOf(socket);
+      if (index !== -1) {
+        sockets.splice(index, 1);
+        if (sockets.length === 0) {
+          allSockets.delete(roomId);
+        }
+      }
+    }
+  });
 });
