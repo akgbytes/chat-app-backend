@@ -2,23 +2,38 @@ import { WebSocket, WebSocketServer } from "ws";
 
 const ws = new WebSocketServer({ port: 8080 });
 
-const allSockets: WebSocket[] = [];
+const allSockets: Map<string, WebSocket[]> = new Map();
 
 ws.on("connection", (socket) => {
-  allSockets.push(socket);
-  console.log(`User connected #`);
+  console.log(`User connected`);
   socket.send("successfully connected");
 
   socket.on("message", (message) => {
-    console.log("message received : ", message.toString());
-    allSockets.map((s) => {
-      if (socket !== s) {
-        s.send(message.toString());
-      }
-    });
-  });
+    const parsedMessage = JSON.parse(message.toString());
 
-  socket.on("close", () => {
-    allSockets.filter((s) => s !== socket);
+    // join a room
+    if (parsedMessage.type === "join") {
+      let roomId = parsedMessage.payload.roomId;
+      let existing = allSockets.get(roomId);
+      if (existing) {
+        existing.push(socket);
+      } else {
+        allSockets.set(roomId, [socket]);
+      }
+    }
+
+    // send message to room memberss
+    if (parsedMessage.type === "chat") {
+      for (const [roomId, sockets] of allSockets.entries()) {
+        if (sockets.includes(socket)) {
+          sockets.forEach((s) => {
+            if (s !== socket) {
+              s.send(parsedMessage.payload.message);
+            }
+          });
+          break;
+        }
+      }
+    }
   });
 });
