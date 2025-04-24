@@ -5,7 +5,6 @@ const ws = new WebSocketServer({ port: 8080 });
 const allSockets: Map<string, WebSocket[]> = new Map();
 
 ws.on("connection", (socket) => {
-  console.log(`User connected`);
   socket.send("successfully connected");
 
   socket.on("message", (message) => {
